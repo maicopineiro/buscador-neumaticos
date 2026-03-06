@@ -2,7 +2,7 @@ import streamlit as st
 import pandas as pd
 
 # 1. Configuración de seguridad
-USUARIO_CORRECTO = "Sanchez"
+USUARIO_CORRECTO = "Admin"
 CLAVE_CORRECTA = "neum@ticos2026"
 
 st.set_page_config(page_title="Stock de Neumáticos - RASA", page_icon='ico.ico')
@@ -78,6 +78,7 @@ if check_password():
                 st.warning("No se encontraron resultados.")
         else:
             st.info("Ingresa un término para buscar en el inventario.")
+
 
 
 
