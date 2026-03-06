@@ -5,7 +5,7 @@ import pandas as pd
 USUARIO_CORRECTO = "Admin"
 CLAVE_CORRECTA = "neum@ticos2026"
 
-st.set_page_config(page_title="Stock de Neumáticos - RASA", page_icon='ico.ico')
+st.set_page_config(page_title="Neumáticos - RASA", page_icon='ico.ico')
 
 def check_password():
     if "authenticated" not in st.session_state:
@@ -45,7 +45,7 @@ if check_password():
         st.session_state.authenticated = False
         st.rerun()
 
-    st.title("Buscador de Neumáticos - RASA")
+    st.title("Neumáticos - RASA")
     
     df = cargar_datos()
 
@@ -78,6 +78,7 @@ if check_password():
                 st.warning("No se encontraron resultados.")
         else:
             st.info("Ingresa un término para buscar en el inventario.")
+
 
 
 
