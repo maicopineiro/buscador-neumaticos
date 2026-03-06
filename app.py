@@ -63,7 +63,7 @@ if check_password():
 
             if not resultados.empty:
                 def color_stock(val):
-                    color = '#d4edda' if val == "Hay Stock" else '#fff3cd' if val == "Consultar" else '#f8d7da'
+                    color = "#003d0e" if val == "Hay Stock" else "#1905ce" if val == "Consultar" else "#ff051a"
                     return f'background-color: {color}'
 
                 st.dataframe(
@@ -75,5 +75,4 @@ if check_password():
                 st.warning("No se encontraron resultados.")
         else:
             st.info("Ingresa un término para buscar en el inventario.")
-
 
