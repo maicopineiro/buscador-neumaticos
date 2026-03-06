@@ -1,53 +1,77 @@
 import streamlit as st
 import pandas as pd
 
-# Configuración de la página
-st.set_page_config(page_title="Buscador de Neumáticos", page_icon="🛞")
+# 1. Configuración de seguridad (Cambia 'admin123' por la contraseña que desees)
+USUARIO_CORRECTO = "admin"
+CLAVE_CORRECTA = "neumaticos2024"
 
-st.title("🔍 Consulta de Stock")
-st.markdown("Busca por medida (ej: 145/70 R12) o marca.")
+st.set_page_config(page_title="Stock Privado de Neumáticos", page_icon="🔐")
 
+# Función para verificar el login
+def check_password():
+    if "authenticated" not in st.session_state:
+        st.session_state.authenticated = False
+
+    if not st.session_state.authenticated:
+        st.title("🔑 Acceso al Sistema")
+        usuario = st.text_input("Usuario")
+        clave = st.text_input("Contraseña", type="password")
+        
+        if st.button("Entrar"):
+            if usuario == USUARIO_CORRECTO and clave == CLAVE_CORRECTA:
+                st.session_state.authenticated = True
+                st.rerun()
+            else:
+                st.error("Usuario o contraseña incorrectos")
+        return False
+    return True
+
+# 2. Función de carga de datos (tu formato de 3 columnas)
 @st.cache_data
 def cargar_datos():
     try:
-        # Cargamos el CSV con el nuevo formato (Descripción, Medida, Stock)
         df = pd.read_csv('inventario.csv', sep=';', encoding='latin-1')
-        
-        # Limpieza de espacios en blanco en los textos
         df.columns = df.columns.str.strip()
         for col in df.columns:
             if df[col].dtype == 'object':
                 df[col] = df[col].str.strip()
         return df
     except Exception as e:
-        st.error(f"Error al cargar el archivo: {e}")
+        st.error(f"Error al cargar el inventario: {e}")
         return None
 
-df = cargar_datos()
+# 3. Ejecución de la lógica
+if check_password():
+    # Botón para cerrar sesión en la barra lateral
+    if st.sidebar.button("Cerrar Sesión"):
+        st.session_state.authenticated = False
+        st.rerun()
 
-if df is not None:
-    # Buscador inteligente
-    busqueda = st.text_input("Escribe aquí la medida o modelo:").strip().upper()
+    st.title("🛞 Buscador de Neumáticos")
+    
+    df = cargar_datos()
 
-    if busqueda:
-        # Filtra en ambas columnas (Medida y Descripción)
-        filtro = (
-            df['Medida'].str.contains(busqueda, case=False, na=False) | 
-            df['Descripción del artículo'].str.contains(busqueda, case=False, na=False)
-        )
-        resultados = df[filtro]
+    if df is not None:
+        busqueda = st.text_input("🔍 Medida o Modelo (ej: 145/70 o ONYX):").strip().upper()
 
-        if not resultados.empty:
-            # Estilo de colores para la columna Stock
-            def color_stock(val):
-                color = "#035817" if val == "Hay Stock" else "#0c08e9" if val == "Consultar" else "#d61d1d"
-                return f'background-color: {color}'
-
-            # Mostrar tabla
-            st.dataframe(
-                resultados.style.applymap(color_stock, subset=['Stock']),
-                use_container_width=True,
-                hide_index=True
+        if busqueda:
+            filtro = (
+                df['Medida'].str.contains(busqueda, case=False, na=False) | 
+                df['Descripción del artículo'].str.contains(busqueda, case=False, na=False)
             )
+            resultados = df[filtro]
+
+            if not resultados.empty:
+                def color_stock(val):
+                    color = '#d4edda' if val == "Hay Stock" else '#fff3cd' if val == "Consultar" else '#f8d7da'
+                    return f'background-color: {color}'
+
+                st.dataframe(
+                    resultados.style.applymap(color_stock, subset=['Stock']),
+                    use_container_width=True,
+                    hide_index=True
+                )
+            else:
+                st.warning("No se encontraron resultados.")
         else:
-            st.warning("No se encontraron coincidencias.")
+            st.info("Ingresa un término para buscar en el inventario.")
