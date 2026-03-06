@@ -3,7 +3,7 @@ import pandas as pd
 
 # 1. Configuración de seguridad (Cambia 'admin123' por la contraseña que desees)
 USUARIO_CORRECTO = "Sanchez"
-CLAVE_CORRECTA = "neum@aticos2026"
+CLAVE_CORRECTA = "neum@ticos2026"
 
 st.set_page_config(page_title="Stock Privado de Neumáticos", page_icon="🔐")
 
@@ -75,4 +75,5 @@ if check_password():
                 st.warning("No se encontraron resultados.")
         else:
             st.info("Ingresa un término para buscar en el inventario.")
+
 
