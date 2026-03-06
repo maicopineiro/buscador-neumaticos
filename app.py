@@ -5,7 +5,7 @@ import pandas as pd
 USUARIO_CORRECTO = "Sanchez"
 CLAVE_CORRECTA = "neum@ticos2026"
 
-st.set_page_config(page_title="Stock Privado de Neumáticos", page_icon="🔐")
+st.set_page_config(page_title="Stock Privado de Neumáticos", page_icon="ico.ico")
 
 # Función para verificar el login
 def check_password():
@@ -75,4 +75,5 @@ if check_password():
                 st.warning("No se encontraron resultados.")
         else:
             st.info("Ingresa un término para buscar en el inventario.")
+
 
