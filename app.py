@@ -2,8 +2,8 @@ import streamlit as st
 import pandas as pd
 
 # 1. Configuración de seguridad (Cambia 'admin123' por la contraseña que desees)
-USUARIO_CORRECTO = "admin"
-CLAVE_CORRECTA = "neumaticos2024"
+USUARIO_CORRECTO = "Sanchez"
+CLAVE_CORRECTA = "neum@aticos2026"
 
 st.set_page_config(page_title="Stock Privado de Neumáticos", page_icon="🔐")
 
@@ -75,3 +75,4 @@ if check_password():
                 st.warning("No se encontraron resultados.")
         else:
             st.info("Ingresa un término para buscar en el inventario.")
+
