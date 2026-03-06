@@ -45,7 +45,7 @@ if check_password():
         st.session_state.authenticated = False
         st.rerun()
 
-    st.title("Buscador de Neumáticos")
+    st.title("Buscador de Neumáticos - RASA")
     
     df = cargar_datos()
 
@@ -78,6 +78,7 @@ if check_password():
                 st.warning("No se encontraron resultados.")
         else:
             st.info("Ingresa un término para buscar en el inventario.")
+
 
 
 
