@@ -1,13 +1,12 @@
 import streamlit as st
 import pandas as pd
 
-# 1. Configuración de seguridad (Cambia 'admin123' por la contraseña que desees)
+# 1. Configuración de seguridad
 USUARIO_CORRECTO = "Sanchez"
 CLAVE_CORRECTA = "neum@ticos2026"
 
-st.set_page_config(page_title="Stock de Neumáticos", page_icon="main/ico.ico")
+st.set_page_config(page_title="Stock Privado de Neumáticos", page_icon='ico.ico')
 
-# Función para verificar el login
 def check_password():
     if "authenticated" not in st.session_state:
         st.session_state.authenticated = False
@@ -26,7 +25,7 @@ def check_password():
         return False
     return True
 
-# 2. Función de carga de datos (tu formato de 3 columnas)
+# 2. Función de carga de datos
 @st.cache_data
 def cargar_datos():
     try:
@@ -42,12 +41,11 @@ def cargar_datos():
 
 # 3. Ejecución de la lógica
 if check_password():
-    # Botón para cerrar sesión en la barra lateral
     if st.sidebar.button("Cerrar Sesión"):
         st.session_state.authenticated = False
         st.rerun()
 
-    st.title("🛞 Buscador de Neumáticos")
+    st.title("Buscador de Neumáticos")
     
     df = cargar_datos()
 
@@ -55,17 +53,22 @@ if check_password():
         busqueda = st.text_input("🔍 Medida o Modelo (ej: 145/70 o ONYX):").strip().upper()
 
         if busqueda:
+            # El filtro sigue buscando en 'Medida' y 'Descripción', aunque no mostremos 'Medida'
             filtro = (
                 df['Medida'].str.contains(busqueda, case=False, na=False) | 
                 df['Descripción del artículo'].str.contains(busqueda, case=False, na=False)
             )
-            resultados = df[filtro]
+            
+            # Seleccionamos solo las columnas deseadas
+            resultados = df[filtro][['Descripción del artículo', 'Stock']]
 
             if not resultados.empty:
                 def color_stock(val):
+                    # Definimos colores con texto blanco para mejor contraste
                     color = "#003d0e" if val == "Hay Stock" else "#1905ce" if val == "Consultar" else "#ff051a"
-                    return f'background-color: {color}'
+                    return f'background-color: {color}; color: white'
 
+                # Mostramos la tabla filtrada
                 st.dataframe(
                     resultados.style.applymap(color_stock, subset=['Stock']),
                     use_container_width=True,
@@ -75,8 +78,5 @@ if check_password():
                 st.warning("No se encontraron resultados.")
         else:
             st.info("Ingresa un término para buscar en el inventario.")
-
-
-
 
 
