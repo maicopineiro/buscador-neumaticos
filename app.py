@@ -59,21 +59,26 @@ def cargar_datos():
     except Exception as e:
         st.error(f"Error al conectar con la base de datos: {e}")
         return None
-
-# --- 5. ESTILO VISUAL DE LAS FILAS ---
+# --- 5. ESTILO VISUAL DE LAS FILAS (Versión Robusta) ---
 def resaltar_filas(row):
-    # Lógica basada en el texto exacto de tu nueva imagen
+    # .strip() elimina espacios al inicio/final
+    # .lower() convierte todo a minúsculas para comparar sin errores
     estado = str(row['Stock']).strip().lower()
     
     if "hay stock" in estado:
-        color = 'background-color: #06402B; color: #FFFFFF' # Verde
+        # Verde RASA (Fondo verde, texto blanco)
+        color = 'background-color: #06402B; color: #FFFFFF' 
     elif "no hay stock" in estado:
-        color = 'background-color: #5C191E; color: #FFFFFF' # Rojo
+        # Rojo Alerta (Fondo rojo, texto blanco)
+        color = 'background-color: #5C191E; color: #FFFFFF' 
     elif "consultar" in estado:
-        color = 'background-color: #3D3D3D; color: #FFFFFF' # Gris/Negro
+        # Gris Oscuro (Fondo gris, texto blanco)
+        color = 'background-color: #3D3D3D; color: #FFFFFF' 
     else:
-        color = '' # Por si hay celdas vacías
+        # Si la celda está vacía o tiene otro texto
+        color = '' 
     
+    # Aplicar el mismo color a todas las celdas de la fila
     return [color] * len(row)
 
 # --- 6. LÓGICA PRINCIPAL ---
