@@ -1,7 +1,7 @@
 import streamlit as st
 import pandas as pd
 
-# --- 1. Configuración de Página ---
+# --- 1. CONFIGURACIÓN DE PÁGINA ---
 st.set_page_config(
     page_title="Stock RASA", 
     page_icon="ico.ico", 
@@ -9,18 +9,18 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
-# --- 2. Carga de Credenciales ---
+# --- 2. CARGA DE CREDENCIALES DESDE SECRETS ---
 USUARIO_SISTEMA = st.secrets["credentials"]["usuario"]
 CLAVE_SISTEMA = st.secrets["credentials"]["clave"]
 URL_GSHEETS = st.secrets["gsheets"]["url"]
 
-# --- 3. Función de Autenticación ---
+# --- 3. FUNCIÓN DE AUTENTICACIÓN ---
 def check_password():
     if "authenticated" not in st.session_state:
         st.session_state.authenticated = False
 
     if not st.session_state.authenticated:
-        st.title("🔑 Acceso al Sistema")
+        st.title("🔑 Acceso al Sistema - RASA")
         col1, _ = st.columns([1, 2])
         with col1:
             usuario_input = st.text_input("Usuario").strip()
@@ -36,51 +36,53 @@ def check_password():
         return False
     return True
 
-# --- 4. Función de Carga y Limpieza (Actualizada según imagen) ---
-@st.cache_data(ttl=600)
+# --- 4. FUNCIÓN DE CARGA Y LIMPIEZA DE DATOS (NUEVO FORMATO) ---
+@st.cache_data(ttl=300)
 def cargar_datos():
     try:
-        # Importante: Asegúrate de que el CSV de Google Sheets tenga estos encabezados exactos
+        # Leemos el CSV
         df = pd.read_csv(URL_GSHEETS)
+        
+        # Limpiamos espacios en blanco en los nombres de las columnas
         df.columns = df.columns.str.strip()
         
-        # Seleccionamos solo las columnas que quieres mostrar según la imagen
-        # Usamos 'Descripción del artículo' y 'Stock'
-        columnas_interes = ['Descripción del artículo', 'Stock']
+        # Según tu nueva imagen, las columnas son: SKU, Descripción del artículo, C. Central, Patrón, Total, Stock
+        # Pero tú solo quieres mostrar 'Descripción del artículo' y 'Stock'
+        columnas_finales = ['Descripción del artículo', 'Stock']
         
-        # Verificamos si las columnas existen para evitar errores
-        df = df[columnas_interes]
-        return df
+        if set(columnas_finales).issubset(df.columns):
+            # Retornamos solo las dos columnas de interés
+            return df[columnas_finales]
+        else:
+            st.error(f"Error: No se encontraron las columnas. Columnas actuales: {list(df.columns)}")
+            return None
     except Exception as e:
         st.error(f"Error al conectar con la base de datos: {e}")
         return None
 
-
-# --- 5. Estilo Visual ---
+# --- 5. ESTILO VISUAL DE LAS FILAS ---
 def resaltar_filas(row):
-    # Convertimos a string, quitamos espacios y pasamos a minúsculas para comparar mejor
-    val = str(row['Stock']).strip().lower()
+    # Lógica basada en el texto exacto de tu nueva imagen
+    estado = str(row['Stock']).strip().lower()
     
-    # Definimos colores (puedes ajustarlos a tu gusto)
-    verde = 'background-color: #06402B; color: #FFFFFF;' # Verde oscuro, texto blanco
-    rojo = 'background-color: #5C191E; color: #FFFFFF;'  # Rojo oscuro, texto blanco
-    gris = 'background-color: #333333; color: #FFFFFF;'  # Gris para otros
-    
-    if "hay stock" in val and "no hay" not in val:
-        color = verde
-    elif "no hay" in val:
-        color = rojo
+    if "hay stock" in estado:
+        color = 'background-color: #06402B; color: #FFFFFF' # Verde
+    elif "no hay stock" in estado:
+        color = 'background-color: #5C191E; color: #FFFFFF' # Rojo
+    elif "consultar" in estado:
+        color = 'background-color: #3D3D3D; color: #FFFFFF' # Gris/Negro
     else:
-        color = gris
-        
+        color = '' # Por si hay celdas vacías
+    
     return [color] * len(row)
 
-# --- 6. Lógica Principal ---
+# --- 6. LÓGICA PRINCIPAL ---
 if check_password():
-    st.sidebar.title("⚙️ Panel de Control")
-    st.sidebar.info(f"Conectado como: **{st.session_state.user_email}**")
+    # Barra lateral
+    st.sidebar.title("Panel de Control")
+    st.sidebar.info(f"Usuario: **{st.session_state.user_email}**")
     
-    if st.sidebar.button("🔄 Actualizar Inventario"):
+    if st.sidebar.button("🔄 Actualizar Datos", use_container_width=True):
         st.cache_data.clear()
         st.rerun()
 
@@ -88,25 +90,25 @@ if check_password():
         st.session_state.authenticated = False
         st.rerun()
 
-    st.title("🛞 Buscador de Neumáticos - RASA")
+    st.title("🛞 Buscador de Stock - Neumáticos RASA")
     
-    with st.spinner('Sincronizando inventario...'):
+    with st.spinner('Cargando inventario actualizado...'):
         df_inventario = cargar_datos()
 
     if df_inventario is not None:
-        busqueda = st.text_input("🔍 Buscar por Medida, Marca o Modelo:").strip().upper()
+        # Buscador de texto
+        busqueda = st.text_input("🔍 Buscar por medida, marca o modelo (ej. 215/75 o BRIDGESTONE):").strip().upper()
 
         if busqueda:
+            # Filtro inteligente por múltiples palabras
             palabras = busqueda.split()
             mask = True
             for p in palabras:
-                # Busca solo en la descripción del artículo
                 mask &= df_inventario['Descripción del artículo'].astype(str).str.contains(p, case=False, na=False)
             
             resultados = df_inventario[mask]
 
             if not resultados.empty:
-                st.success(f"Se encontraron **{len(resultados)}** productos.")
                 st.dataframe(
                     resultados.style.apply(resaltar_filas, axis=1),
                     use_container_width=True,
@@ -114,17 +116,15 @@ if check_password():
                     height=600
                 )
             else:
-                st.warning("No se encontraron coincidencias.")
+                st.warning("No se encontraron coincidencias para esa búsqueda.")
         else:
-            st.info("💡 Escribe para filtrar. Ejemplo: '215/65' o 'BRIDGESTONE'")
-            
-            # Vista previa inicial de los productos
+            # Vista general inicial
+            st.info("Escribe arriba para filtrar el stock.")
             st.dataframe(
                 df_inventario.style.apply(resaltar_filas, axis=1),
                 use_container_width=True, 
-                hide_index=True
+                hide_index=True,
+                height=700
             )
 
-
-
-
+# --- FIN ---
