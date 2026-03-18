@@ -4,7 +4,7 @@ import pandas as pd
 # --- 1. Configuración de Página ---
 st.set_page_config(
     page_title="Stock RASA", 
-    page_icon="🛞", 
+    page_icon="ico.ico", 
     layout="wide",
     initial_sidebar_state="expanded"
 )
