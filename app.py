@@ -4,16 +4,20 @@ import pandas as pd
 # --- 1. CONFIGURACIÓN DE PÁGINA ---
 st.set_page_config(
     page_title="Stock RASA", 
-    page_icon="🛞", 
+    page_icon="ico.ico", 
     layout="wide",
     initial_sidebar_state="expanded"
 )
 
 # --- 2. CARGA DE CREDENCIALES DESDE SECRETS ---
-# Asegúrate de configurar estos nombres en Streamlit Cloud > Settings > Secrets
-USUARIO_SISTEMA = st.secrets["credentials"]["usuario"]
-CLAVE_SISTEMA = st.secrets["credentials"]["clave"]
-URL_GSHEETS = st.secrets["gsheets"]["url"]
+# Asegúrate de configurar estos nombres en el panel de 'Secrets' de Streamlit Cloud
+try:
+    USUARIO_SISTEMA = st.secrets["credentials"]["usuario"]
+    CLAVE_SISTEMA = st.secrets["credentials"]["clave"]
+    URL_GSHEETS = st.secrets["gsheets"]["url"]
+except Exception:
+    st.error("Error: No se encontraron las credenciales en st.secrets. Verifica la configuración.")
+    st.stop()
 
 # --- 3. FUNCIÓN DE AUTENTICACIÓN ---
 def check_password():
@@ -37,76 +41,76 @@ def check_password():
         return False
     return True
 
-# --- 4. FUNCIÓN DE CARGA Y FILTRADO (NUEVO FORMATO) ---
-@st.cache_data(ttl=300)
+# --- 4. FUNCIÓN DE CARGA Y LIMPIEZA DE DATOS ---
+@st.cache_data(ttl=300) # Se actualiza cada 5 minutos automáticamente
 def cargar_datos():
     try:
-        # Lectura desde el enlace CSV de Google Sheets
+        # Lectura del CSV desde la URL pública de Google Sheets
         df = pd.read_csv(URL_GSHEETS)
         
-        # Limpieza de nombres de columnas
+        # Limpieza de nombres de columnas (quita espacios invisibles)
         df.columns = df.columns.str.strip()
         
-        # Columnas según tu última imagen: SKU, Descripción del artículo, C. Central, Patrón, Total, Stock
-        # Solo mostraremos las dos que pediste:
+        # Columnas que queremos mostrar (según tu requerimiento)
         columnas_visibles = ['Descripción del artículo', 'Stock']
         
+        # Verificamos que las columnas existan antes de filtrar
         if set(columnas_visibles).issubset(df.columns):
-            # Retornamos solo lo necesario
             return df[columnas_visibles]
         else:
-            st.error(f"Error: No se encontraron las columnas exactas. Columnas detectadas: {list(df.columns)}")
+            st.error(f"Error: No se encontraron las columnas esperadas. Detectadas: {list(df.columns)}")
             return None
     except Exception as e:
         st.error(f"Error al conectar con la base de datos: {e}")
         return None
 
-# --- 5. FUNCIÓN DE COLORES (CORREGIDA) ---
+# --- 5. FUNCIÓN PARA LOS COLORES DE LAS FILAS ---
 def resaltar_filas(row):
-    # .strip().lower() hace que "Hay stock", "HAY STOCK" o " hay stock " funcionen igual
+    # .strip().lower() asegura que no importen espacios ni mayúsculas/minúsculas
     estado = str(row['Stock']).strip().lower()
     
     if "hay stock" in estado:
-        # Verde RASA (Fondo verde oscuro, texto blanco)
-        color = 'background-color: #06402B; color: #FFFFFF; font-weight: bold;'
+        # Verde oscuro con texto blanco
+        color = 'background-color: #06402B; color: #FFFFFF;' 
     elif "no hay stock" in estado:
-        # Rojo Alerta (Fondo rojo oscuro, texto blanco)
-        color = 'background-color: #5C191E; color: #FFFFFF; font-weight: bold;'
+        # Rojo oscuro con texto blanco
+        color = 'background-color: #5C191E; color: #FFFFFF;' 
     elif "consultar" in estado:
-        # Gris Neutro (Fondo gris oscuro, texto blanco)
-        color = 'background-color: #3D3D3D; color: #FFFFFF; font-weight: bold;'
+        # Gris oscuro con texto blanco
+        color = 'background-color: #3D3D3D; color: #FFFFFF;' 
     else:
-        # Sin color si no coincide con nada
+        # Sin formato para cualquier otro caso
         color = ''
     
     return [color] * len(row)
 
-# --- 6. LÓGICA DE LA APLICACIÓN ---
+# --- 6. LÓGICA PRINCIPAL DE LA APP ---
 if check_password():
     # BARRA LATERAL
-    st.sidebar.title("⚙️ Panel de Control")
-    st.sidebar.info(f"Sesión activa: **{st.session_state.user_email}**")
+    st.sidebar.title("Panel de Control")
+    st.sidebar.write(f"👤 Conectado como: **{st.session_state.user_email}**")
     
+    # Botón para forzar la actualización de datos
     if st.sidebar.button("🔄 Actualizar Inventario", use_container_width=True):
         st.cache_data.clear()
         st.rerun()
 
+    # Botón de Salir
     if st.sidebar.button("🚪 Cerrar Sesión", use_container_width=True):
         st.session_state.authenticated = False
         st.rerun()
 
-    # CUERPO PRINCIPAL
-    st.title("🛞 Stock de Neumáticos - RASA")
+    st.title("🛞 Buscador de Neumáticos - RASA")
     
     with st.spinner('Sincronizando con la base de datos...'):
         df_inventario = cargar_datos()
 
     if df_inventario is not None:
-        # BUSCADOR DINÁMICO
+        # CAMPO DE BÚSQUEDA
         busqueda = st.text_input("🔍 Buscar por marca, medida o diseño (Ej: 215/75 o BRIDGESTONE):").strip().upper()
 
         if busqueda:
-            # Dividir búsqueda por palabras para búsqueda flexible
+            # Dividir búsqueda en palabras para filtrar mejor (ej: "ONYX 215")
             palabras = busqueda.split()
             mask = True
             for p in palabras:
@@ -120,13 +124,13 @@ if check_password():
                     resultados.style.apply(resaltar_filas, axis=1),
                     use_container_width=True,
                     hide_index=True,
-                    height=600
+                    height=600 # Altura para evitar que la página sea eterna
                 )
             else:
                 st.warning("No se encontraron productos que coincidan con tu búsqueda.")
         else:
-            # VISTA INICIAL
-            st.info("💡 Escribe en el buscador para filtrar rápidamente.")
+            # VISTA POR DEFECTO (Si no hay búsqueda escrita)
+            st.info("💡 Escribe en el buscador para filtrar. La tabla muestra todo el stock disponible.")
             st.dataframe(
                 df_inventario.style.apply(resaltar_filas, axis=1),
                 use_container_width=True, 
