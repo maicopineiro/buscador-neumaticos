@@ -88,7 +88,7 @@ if check_password():
         st.session_state.authenticated = False
         st.rerun()
 
-    st.title("🛞 Buscador de Neumáticos - RASA")
+    st.title("Buscador de Neumáticos - RASA")
     
     with st.spinner('Sincronizando inventario...'):
         df_inventario = cargar_datos()
